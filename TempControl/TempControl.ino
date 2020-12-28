@@ -2,8 +2,9 @@
 
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2); //lcd connected pins
 
-const int sensor = A0; // The LM35 is attached to A0
-const float maxV = 5.0; // The reference voldage is 5V
+const byte sensor = A0;      // The LM35 is attached to A0
+const byte controller = 13; // The controller output is D13
+const float maxV = 5.0;     // The reference voldage is 5V
 
 bool showF = true;
 int t;
@@ -13,7 +14,7 @@ int offTemp = 26;       // Turn the heater off at a high temp
 class TempSense {
   private:
     const int lm35Scale = 100.0; // 100 degree Celcius per Volt.
-    int sensor = A0;
+    byte sensor = A0;
     float maxV = 5.0;
   public:
     TempSense(byte sensor, float maxV) {
@@ -38,13 +39,24 @@ class TempSense {
 class Warmer {
   private:
     bool onStatus = false;
+    byte controller = 13;
+
   public:
-    Warmer() {
+    Warmer(int controller) {
+      this->controller = controller;
+      init();
     }
+
+    void init() {
+      pinMode(this->controller, OUTPUT);
+    }
+
     void turnOn() {
+      digitalWrite(this->controller, HIGH);
       this->onStatus = true;
     }
     void turnOff() {
+      digitalWrite(this->controller, LOW);
       this->onStatus = false;
     }
     bool isOn() {
@@ -93,10 +105,12 @@ class Display {
 
 
 TempSense temp(sensor, 5.0);
-Warmer warmer;
+Warmer warmer(controller);
 Display disp(&temp, &warmer);
 
-void setup() {}
+void setup() {
+  warmer.init();
+}
   
 void loop() 
 {
