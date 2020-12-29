@@ -1,0 +1,150 @@
+EESchema Schematic File Version 4
+EELAYER 30 0
+EELAYER END
+$Descr A4 11693 8268
+encoding utf-8
+Sheet 1 1
+Title ""
+Date ""
+Rev ""
+Comp ""
+Comment1 ""
+Comment2 ""
+Comment3 ""
+Comment4 ""
+$EndDescr
+$Comp
+L MCU_Module:Arduino_Nano_v2.x A?
+U 1 1 5FEA8AC6
+P 6100 2950
+F 0 "A?" H 6100 1861 50  0000 C CNN
+F 1 "Arduino_Nano_v2.x" H 6100 1770 50  0000 C CNN
+F 2 "Module:Arduino_Nano" H 6100 2950 50  0001 C CIN
+F 3 "https://www.arduino.cc/en/uploads/Main/ArduinoNanoManual23.pdf" H 6100 2950 50  0001 C CNN
+	1    6100 2950
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	5600 2850 4800 2850
+Wire Wire Line
+	4800 2750 5600 2750
+Wire Wire Line
+	5600 2650 4800 2650
+Wire Wire Line
+	5600 2550 4800 2550
+Wire Wire Line
+	5600 3550 4800 3550
+Wire Wire Line
+	5600 3450 5200 3450
+Wire Wire Line
+	5200 3450 5200 3750
+Wire Wire Line
+	5200 3750 4800 3750
+$Comp
+L Display_Character:WC1602A DS?
+U 1 1 5FEAB6C6
+P 4400 3150
+F 0 "DS?" H 4400 2169 50  0000 C CNN
+F 1 "WC1602A" H 4400 2260 50  0000 C CNN
+F 2 "Display:WC1602A" H 4400 2250 50  0001 C CIN
+F 3 "http://www.wincomlcd.com/pdf/WC1602A-SFYLYHTC06.pdf" H 5100 3150 50  0001 C CNN
+	1    4400 3150
+	-1   0    0    1   
+$EndComp
+Wire Wire Line
+	4400 2350 4400 2100
+$Comp
+L power:GND #PWR0101
+U 1 1 5FEC08B3
+P 5000 3900
+F 0 "#PWR0101" H 5000 3650 50  0001 C CNN
+F 1 "GND" H 5005 3727 50  0000 C CNN
+F 2 "" H 5000 3900 50  0001 C CNN
+F 3 "" H 5000 3900 50  0001 C CNN
+	1    5000 3900
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	4800 3650 5000 3650
+Wire Wire Line
+	5000 3650 5000 3900
+Wire Bus Line
+	3450 1700 7250 1700
+Wire Wire Line
+	6300 1950 6300 1700
+Wire Wire Line
+	4400 3950 4400 4150
+Wire Wire Line
+	4400 4150 4900 4150
+Wire Wire Line
+	4900 4150 4900 1700
+Wire Wire Line
+	3500 2100 3500 3350
+Connection ~ 3500 3350
+Wire Wire Line
+	3500 3350 3500 3550
+Wire Wire Line
+	4000 3350 3500 3350
+Wire Wire Line
+	4400 2100 3500 2100
+$Comp
+L power:GND #PWR0102
+U 1 1 5FEBE710
+P 3500 3900
+F 0 "#PWR0102" H 3500 3650 50  0001 C CNN
+F 1 "GND" H 3505 3727 50  0000 C CNN
+F 2 "" H 3500 3900 50  0001 C CNN
+F 3 "" H 3500 3900 50  0001 C CNN
+	1    3500 3900
+	1    0    0    -1  
+$EndComp
+NoConn ~ 4800 2950
+NoConn ~ 4800 3050
+NoConn ~ 4800 3150
+NoConn ~ 4800 3250
+$Comp
+L Device:R_Small_US R?
+U 1 1 5FED89CE
+P 3850 3450
+F 0 "R?" V 3645 3450 50  0000 C CNN
+F 1 "R_Small_US" V 3736 3450 50  0000 C CNN
+F 2 "" H 3850 3450 50  0001 C CNN
+F 3 "~" H 3850 3450 50  0001 C CNN
+	1    3850 3450
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	3950 3450 4000 3450
+Wire Wire Line
+	3750 3450 3650 3450
+Wire Wire Line
+	3650 3450 3650 4150
+Wire Wire Line
+	3650 4150 3800 4150
+Connection ~ 4400 4150
+$Comp
+L Device:R_POT_US RV?
+U 1 1 5FEDE4A8
+P 3800 3750
+F 0 "RV?" H 3733 3796 50  0000 R CNN
+F 1 "R_POT_US" H 3733 3705 50  0000 R CNN
+F 2 "" H 3800 3750 50  0001 C CNN
+F 3 "~" H 3800 3750 50  0001 C CNN
+	1    3800 3750
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3950 3750 4000 3750
+Wire Wire Line
+	3800 3600 3800 3550
+Wire Wire Line
+	3800 3550 3500 3550
+Connection ~ 3500 3550
+Wire Wire Line
+	3500 3550 3500 3900
+Wire Wire Line
+	3800 3900 3800 4150
+Connection ~ 3800 4150
+Wire Wire Line
+	3800 4150 4400 4150
+$EndSCHEMATC
