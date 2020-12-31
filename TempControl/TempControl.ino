@@ -19,6 +19,7 @@ class TempSense {
     const int lm35Scale = 100.0; // 100 degree Celcius per Volt.
     byte sensor = A0;
     float maxV = 5.0;
+    float openConn = 300.0;
   public:
     TempSense(byte sensor, float maxV) {
       this->sensor = sensor;
@@ -39,6 +40,9 @@ class TempSense {
     }
     float getOnTemp() {
       return 1.8 * this->getCelsius() + 32.0;
+    }
+    bool isConnected() {
+      return (this->getCelsius() < this->openConn);
     }
 };
 
@@ -106,17 +110,16 @@ class Display {
         lcd.print(onTemp);
       } else {
         lcd.setCursor(0,0);
-        lcd.print("Temp: ");
-        if (this->showF) {
-          lcd.print((int)this->temp->getFahrenheit());
-          lcd.print((char)223);
-          lcd.print("F     ");
-        } else {
-          lcd.print((int)this->temp->getCelsius());
-          lcd.print((char)223);
-          lcd.print("C     ");
+        lcd.print("Temp:");
+        if (this->temp->isConnected()) {
+          char buf [12];
+          int n;
+          n = sprintf(buf, " %2d%c F     ", (int)this->temp->getFahrenheit(), (char) 223);
+          lcd.print(buf);
         }
-      
+        else {
+          lcd.print(" no sensor!");
+        }
         lcd.setCursor(0,1);
         if (this->warmer->isOn()) {
           lcd.print("Heater: On   ");
