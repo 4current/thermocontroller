@@ -1,12 +1,13 @@
 #include<LiquidCrystal.h>  //Header file for LCD Module
 #include<EEPROM.h>         // Store the settings in EEprom
+#include<RunningAverage.h> 
 
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2); //lcd connected pins
 
 const byte sensor = A0;      // The LM35 is attached to A0
 const byte controller = 13; // The controller output is D13
 const float maxV = 5.0;     // The reference voldage is 5V
-const int cycleWait = 500;       // loop every 500ms
+const int cycleWait = 1000;       // loop every second
 
 bool showF = true;
 bool menuMode = false;
@@ -41,9 +42,6 @@ class TempSense {
     float getFahrenheit() {
       return 1.8 * this->getCelsius() + 32.0;
     }
-    float getOnTemp() {
-      return 1.8 * this->getCelsius() + 32.0;
-    }
 };
 
 class Warmer {
@@ -60,7 +58,6 @@ class Warmer {
     void init() {
       pinMode(this->controller, OUTPUT);
     }
-
     void turnOn() {
       digitalWrite(this->controller, HIGH);
       this->onStatus = true;
@@ -98,7 +95,7 @@ class Display {
     byte lowTempValIdx;
     byte avgTimeValIdx;
     byte holdTimeValIdx;
-    
+
   public:
     Display(TempSense *temp, Warmer *warmer) {
       this->temp = temp;
@@ -112,6 +109,11 @@ class Display {
        int address;
        lcd.begin(16,2);
 
+       this->hiTempValIdx = 0;
+       this->lowTempValIdx = 0;
+       this->avgTimeValIdx = 0;
+       this->holdTimeValIdx = 0;
+       
        // read in and initialize the stored settings if they are stored
 
        EEPROM.get(4 * sizeof(byte), stored);
@@ -121,11 +123,12 @@ class Display {
                address = i * sizeof(byte);
                EEPROM.get(address, settings[i]);
            }
-        }
-        this->hiTempValIdx = settings[0];
-        this->lowTempValIdx = settings[1];
-        this->avgTimeValIdx = settings[2];
-        this->holdTimeValIdx = settings[3];
+       }
+       this->hiTempValIdx = settings[0];
+       this->lowTempValIdx = settings[1];
+       this->avgTimeValIdx = settings[2];
+       this->holdTimeValIdx = settings[3];
+
   
     }
 
@@ -202,22 +205,29 @@ class Display {
         lcd.print(opts[optIdx]);
         lcd.setCursor(0,1);
         lcd.print("Value:");
+        char buf [7];
+        char buf2 [10];
         switch(this->optIdx) {
           case 0:
-            lcd.print(hiTemp[this->hiTempValIdx]);
+            sprintf(buf, " %2d%c F", (int)hiTemp[this->hiTempValIdx], deg);
+            lcd.print(buf);
             break;
           case 1:
-            lcd.print(lowTemp[this->lowTempValIdx]);
+            sprintf(buf, " %2d%c F", (int)lowTemp[this->lowTempValIdx], deg);
+            lcd.print(buf);
             break;
           case 2:
-            lcd.print(avgTime[this->avgTimeValIdx]);
+            sprintf(buf2, " %3d sec.", (int)avgTime[this->avgTimeValIdx]);
+            lcd.print(buf2);
             break;
           case 3:
-            lcd.print(holdTime[this->holdTimeValIdx]);
+            sprintf(buf2, " %3d hrs.", (int)holdTime[this->holdTimeValIdx]);
+            lcd.print(buf2);
             break;
-        }
+       }
         
       } else {
+        lcd.clear();
         lcd.setCursor(0,0);
         lcd.print("Temp:");
         char buf [12];
@@ -239,6 +249,7 @@ class Display {
 TempSense temp(sensor, 5.0);
 Warmer warmer(controller);
 Display disp(&temp, &warmer);
+
 bool toggle;
 const byte button1 = 6;
 const byte button2 = 7;
