@@ -1,25 +1,28 @@
 #include<LiquidCrystal.h>  //Header file for LCD Module
+#include<EEPROM.h>         // Store the settings in EEprom
 
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2); //lcd connected pins
 
 const byte sensor = A0;      // The LM35 is attached to A0
 const byte controller = 13; // The controller output is D13
-const byte button1 = 8;      // Settings Menu
 const float maxV = 5.0;     // The reference voldage is 5V
 const int cycleWait = 500;       // loop every 500ms
 
 bool showF = true;
 bool menuMode = false;
 
-int onTemp = 25;        // Turn the heater on at a low temp
-int offTemp = 26;       // Turn the heater off at a high temp
+int onTemp = 2;        // Turn the heater on at a low temp
+int offTemp = 5;       // Turn the heater off at a high temp
+
+const byte eepromSet = 0xA1;
+
+byte settings[4];
 
 class TempSense {
   private:
     const int lm35Scale = 100.0; // 100 degree Celcius per Volt.
     byte sensor = A0;
-    float maxV = 5.0;
-    float openConn = 300.0;
+    float maxV;
   public:
     TempSense(byte sensor, float maxV) {
       this->sensor = sensor;
@@ -40,9 +43,6 @@ class TempSense {
     }
     float getOnTemp() {
       return 1.8 * this->getCelsius() + 32.0;
-    }
-    bool isConnected() {
-      return (this->getCelsius() < this->openConn);
     }
 };
 
@@ -78,9 +78,26 @@ class Display {
   private:
     TempSense *temp;
     Warmer *warmer;
+    char deg = 223;
     bool showF = true;
     bool menuMode = false;
-    byte button1 = 8;
+    int optIdx = 0;
+    int maxOpts = 4;
+    int valIdx = 0;
+    const byte button1 = 6;
+    const byte button2 = 7;
+    const char *opts[4] = {"Hi Temp", "Low Temp", "Avg. Time", "Hold Time"};
+    const int hiTemp[3] = {40, 48, 80};
+    const int lowTemp[3] = {33, 35, 74};
+    const int avgTime[3] = {60, 300, 600};
+    const int holdTime[3] = {4, 8, 24};
+    long int buttonTimer;
+    const long int buttonTimeout = 5000;  // 5 second timeout;
+    
+    byte hiTempValIdx;
+    byte lowTempValIdx;
+    byte avgTimeValIdx;
+    byte holdTimeValIdx;
     
   public:
     Display(TempSense *temp, Warmer *warmer) {
@@ -90,36 +107,122 @@ class Display {
     }
     
     void init() {
-       lcd.begin(16,2);           
+
+       byte stored;
+       int address;
+       lcd.begin(16,2);
+
+       // read in and initialize the stored settings if they are stored
+
+       EEPROM.get(4 * sizeof(byte), stored);
+       
+       if (stored == eepromSet) {
+           for (int i = 0; i < 4; i++) {
+               address = i * sizeof(byte);
+               EEPROM.get(address, settings[i]);
+           }
+        }
+        this->hiTempValIdx = settings[0];
+        this->lowTempValIdx = settings[1];
+        this->avgTimeValIdx = settings[2];
+        this->holdTimeValIdx = settings[3];
+  
     }
 
+    void setButtons() {
+      pinMode(this->button1, INPUT_PULLUP);
+      pinMode(this->button2, INPUT_PULLUP);
+    }
+    
+    void flipMenuMode() {
+       if (!this->menuMode) {
+         this->menuMode = true;
+         this->optIdx = 0;
+       } else if (this->optIdx < this->maxOpts - 1) {
+         ++(this->optIdx);
+       } else {
+        this->optIdx = 0;
+       }
+       this->buttonTimer = millis(); // update the timer on each event
+    }
+
+    void cycleValues() {
+       if (this->menuMode) {
+        switch(this->optIdx) {
+          case 0:
+            this->hiTempValIdx = ++(this->hiTempValIdx) % 3;
+            break;
+          case 1:
+            this->lowTempValIdx = ++(this->lowTempValIdx) % 3;
+            break;
+          case 2:
+            this->avgTimeValIdx = ++(this->avgTimeValIdx) % 3;
+            break;
+          case 3:
+            this->holdTimeValIdx = ++(this->holdTimeValIdx) % 3;
+            break;
+        }
+       }
+       this->buttonTimer = millis(); // update the timer on each event
+    }
+
+    float f2c(float f) {
+      return (f - 32) / 1.8;
+    }
+
+    void checkTimeout() {
+      int address;
+      
+      if ( (millis() - this->buttonTimer) > buttonTimeout) {
+        this->menuMode = false;
+        offTemp = f2c(hiTemp[this->hiTempValIdx]);
+        onTemp = f2c(lowTemp[this->lowTempValIdx]);
+        settings[0] = this->hiTempValIdx;
+        settings[1] = this->lowTempValIdx;
+        settings[2] = this->avgTimeValIdx;
+        settings[3] = this->holdTimeValIdx;
+    }
+        
+        for (int i = 0; i < 4; i++) {
+           address = i * sizeof(byte);
+           EEPROM.update(address, settings[i]);
+        }
+        address = 4 * sizeof(byte);
+        EEPROM.update(address, eepromSet);
+               
+    }
+    
     void show() {
-      bool toggle = ! digitalRead(this->button1);
-
-      // Toggle menuMode if button1 pressed
-      if (toggle) {
-        this->menuMode = ! this->menuMode;
-      }
-
       if (this-> menuMode) {
+        lcd.clear();
         lcd.setCursor(0,0);
-        lcd.print("Off Temp:");
-        lcd.print(offTemp);
+//        lcd.print("Timer:");
+//        lcd.print(millis() - this->buttonTimer);
+        lcd.print("Option:");
+        lcd.print(opts[optIdx]);
         lcd.setCursor(0,1);
-        lcd.print("On Temp:");
-        lcd.print(onTemp);
+        lcd.print("Value:");
+        switch(this->optIdx) {
+          case 0:
+            lcd.print(hiTemp[this->hiTempValIdx]);
+            break;
+          case 1:
+            lcd.print(lowTemp[this->lowTempValIdx]);
+            break;
+          case 2:
+            lcd.print(avgTime[this->avgTimeValIdx]);
+            break;
+          case 3:
+            lcd.print(holdTime[this->holdTimeValIdx]);
+            break;
+        }
+        
       } else {
         lcd.setCursor(0,0);
         lcd.print("Temp:");
-        if (this->temp->isConnected()) {
-          char buf [12];
-          int n;
-          n = sprintf(buf, " %2d%c F     ", (int)this->temp->getFahrenheit(), (char) 223);
-          lcd.print(buf);
-        }
-        else {
-          lcd.print(" no sensor!");
-        }
+        char buf [12];
+        sprintf(buf, " %2d%c F     ", (int)this->temp->getFahrenheit(), deg);
+        lcd.print(buf);
         lcd.setCursor(0,1);
         if (this->warmer->isOn()) {
           lcd.print("Heater: On   ");
@@ -130,32 +233,39 @@ class Display {
       }
   }
 
-  void setButtons(byte button1) {
-     pinMode(this->button1, INPUT_PULLUP);
-  }
 };
 
 
 TempSense temp(sensor, 5.0);
 Warmer warmer(controller);
 Display disp(&temp, &warmer);
+bool toggle;
+const byte button1 = 6;
+const byte button2 = 7;
 
 void setup() {
   warmer.init();
-  disp.setButtons(button1);
+  disp.setButtons();
 }
-  
+
 void loop() 
 {
   if(temp.getCelsius() < onTemp) 
   {
     warmer.turnOn();
-  }
-  else if (temp.getCelsius() > offTemp)
+  } else if (temp.getCelsius() > offTemp)
   {
     warmer.turnOff();
   }
 
+  if (! digitalRead(button1) ) {
+    disp.flipMenuMode();    
+  }
+  if (! digitalRead(button2) ) {
+    disp.cycleValues();    
+  }
+
+  disp.checkTimeout();
   disp.show();
   delay(cycleWait);
 }
